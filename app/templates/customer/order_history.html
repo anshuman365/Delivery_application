@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Order History{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Your Order History</h1>
+    
+    <div class="card shadow">
+        <div class="card-body">
+            {% if orders %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Litres</th>
+                                <th>Delivery Address</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>{{ order.id }}</td>
+                                <td>{{ order.litres }}</td>
+                                <td>{{ order.delivery_address[:30] }}...</td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if order.status == 'Pending' else 'primary' if order.status == 'Assigned' else 'success' if order.status == 'Delivered' else 'danger' }}">
+                                        {{ order.status }}
+                                    </span>
+                                </td>
+                                <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                </td>
+                                <td>
+    {% if order.status in ['Assigned', 'Out for Delivery'] %}
+        <a href="{{ url_for('customer.track_order', order_id=order.id) }}" 
+           class="btn btn-sm btn-primary">
+            <i class="fas fa-map-marker-alt"></i> Track
+        </a>
+    {% else %}
+        <a href="{{ url_for('customer.order_details', order_id=order.id) }}" 
+           class="btn btn-sm btn-outline-secondary">
+            View
+        </a>
+    {% endif %}
+</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">You haven't placed any orders yet.</p>
+                <a href="{{ url_for('customer.new_order') }}" class="btn btn-primary">Place Your First Order</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

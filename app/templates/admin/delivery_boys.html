@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Delivery Boys{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Delivery Boys</h1>
+    
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Vehicle Number</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Assigned Orders</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for boy in delivery_boys %}
+                        <tr>
+                            <td>{{ boy.name }}</td>
+                            <td>{{ boy.vehicle_number }}</td>
+                            <td>{{ boy.phone }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if boy.is_available else 'secondary' }}">
+                                    {{ 'Available' if boy.is_available else 'Busy' }}
+                                </span>
+                            </td>
+                            <td>{{ boy.orders.filter_by(status='Assigned').count() }}</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

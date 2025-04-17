@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Order #{{ order.id }} Details{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Order #{{ order.id }} Details</h1>
+        <a href="{{ url_for('admin.all_orders') }}" class="btn btn-outline-secondary">Back to Orders</a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Customer:</div>
+                        <div class="col-md-8">{{ order.customer.username }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Delivery Address:</div>
+                        <div class="col-md-8">{{ order.delivery_address }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Contact Number:</div>
+                        <div class="col-md-8">{{ order.contact_number }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Order Date:</div>
+                        <div class="col-md-8">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-bold">Last Updated:</div>
+                        <div class="col-md-8">{{ order.updated_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-6 fw-bold">Status:</div>
+                        <div class="col-6">
+                            <span class="badge bg-{{ 'warning' if order.status == 'Pending' else 'primary' if order.status == 'Assigned' else 'success' if order.status == 'Delivered' else 'danger' }}">
+                                {{ order.status }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6 fw-bold">Quantity:</div>
+                        <div class="col-6">{{ order.litres }} Litres</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-6 fw-bold">Price per Litre:</div>
+                        <div class="col-6">${{ "%.2f"|format(order.price_per_litre) }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6 fw-bold">Total Amount:</div>
+                        <div class="col-6">${{ "%.2f"|format(order.total_amount) }}</div>
+                    </div>
+                    
+                    {% if order.status == 'Delivered' %}
+                        <a href="{{ url_for('admin.generate_order_invoice', order_id=order.id) }}" class="btn btn-success w-100 mb-2">
+                            Download Invoice
+                        </a>
+                    {% endif %}
+                    
+                    <form method="POST" action="{{ url_for('admin.update_order_status', order_id=order.id) }}">
+                        <div class="input-group mb-3">
+                            <select class="form-select" name="status">
+                                <option value="Pending" {% if order.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                <option value="Assigned" {% if order.status == 'Assigned' %}selected{% endif %}>Assigned</option>
+                                <option value="Delivered" {% if order.status == 'Delivered' %}selected{% endif %}>Delivered</option>
+                                <option value="Cancelled" {% if order.status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                            <button class="btn btn-primary" type="submit">Update</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+<div class="card mt-4">
+    <div class="card-header">
+        <h5>Delivery Assignment</h5>
+    </div>
+    <div class="card-body">
+        {% if order.status == 'Pending' %}
+            <form method="POST" action="{{ url_for('admin.assign_delivery_boy', order_id=order.id) }}">
+                <div class="row">
+                    <div class="col-md-8">
+                        <select class="form-select" name="delivery_boy_id" required>
+                            <option value="">Select Delivery Boy</option>
+                            {% for boy in available_delivery_boys %}
+                                <option value="{{ boy.id }}"
+                                    {% if boy.id == order.delivery_boy_id %}selected{% endif %}>
+                                    {{ boy.name }} ({{ boy.vehicle_number }})
+                                    {% if not boy.is_available %} - Currently Busy{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100">
+                            Assign Delivery
+                        </button>
+                    </div>
+                </div>
+            </form>
+        {% elif order.delivery_boy %}
+            <div class="alert alert-info">
+                <p>Assigned to: <strong>{{ order.delivery_boy.name }}</strong></p>
+                <p>Vehicle: {{ order.delivery_boy.vehicle_number }}</p>
+                <p>Status: <span class="badge bg-{{ 'primary' if order.status == 'Assigned' else 'info' }}">
+                    {{ order.status }}
+                </span></p>
+                {% if order.current_location_lat %}
+                <p>Last Location Update: 
+                    <a href="https://maps.google.com/?q={{ order.current_location_lat }},{{ order.current_location_lng }}" 
+                       target="_blank">
+                        View on Map
+                    </a>
+                </p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+</div> 
+{% endblock %}

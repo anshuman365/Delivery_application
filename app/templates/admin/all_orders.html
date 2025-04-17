@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}All Orders{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">All Orders</h1>
+    
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Litres</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders.items %}
+                        <tr>
+                            <td>{{ order.id }}</td>
+                            <td>{{ order.customer.username }}</td>
+                            <td>{{ order.litres }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'warning' if order.status == 'Pending' else 'primary' if order.status == 'Assigned' else 'success' if order.status == 'Delivered' else 'danger' }}">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>${{ "%.2f"|format(order.total_amount) }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.order_details', order_id=order.id) }}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if orders.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.all_orders', page=orders.prev_num) }}">Previous</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in orders.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=3) %}
+                        {% if page_num %}
+                            <li class="page-item {% if page_num == orders.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('admin.all_orders', page=page_num) }}">{{ page_num }}</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if orders.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.all_orders', page=orders.next_num) }}">Next</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}

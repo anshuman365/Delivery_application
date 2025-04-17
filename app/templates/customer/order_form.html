@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}New Order{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<style>
+    #map { height: 400px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">New Diesel Order</h1>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('customer.new_order') }}">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3">
+                            {{ form.litres.label(class="form-label") }}
+                            {{ form.litres(class="form-control") }}
+                            {% for error in form.litres.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.delivery_address.label(class="form-label") }}
+                            {{ form.delivery_address(class="form-control", rows=3) }}
+                            {% for error in form.delivery_address.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="mb-3">
+                            {{ form.contact_number.label(class="form-label") }}
+                            {{ form.contact_number(class="form-control") }}
+                            {% for error in form.contact_number.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {{ form.latitude(id="latitude") }}
+                        {{ form.longitude(id="longitude") }}
+                        <div class="d-grid mt-4">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Delivery Location</h5>
+                    <p class="card-text">Click on the map to set your delivery location</p>
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    const map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    let marker;
+    map.on('click', function(e) {
+        if (marker) {
+            map.removeLayer(marker);
+        }
+        marker = L.marker(e.latlng).addTo(map);
+        document.getElementById('latitude').value = e.latlng.lat;
+        document.getElementById('longitude').value = e.latlng.lng;
+    });
+
+    // Try to get user's location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const userLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            map.setView(userLocation, 15);
+            marker = L.marker(userLocation).addTo(map);
+            document.getElementById('latitude').value = userLocation.lat;
+            document.getElementById('longitude').value = userLocation.lng;
+        });
+    }
+</script>
+{% endblock %}

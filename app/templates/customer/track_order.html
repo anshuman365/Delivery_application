@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Track Order #{{ order.id }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+<style>
+    #map { height: 500px; }
+    .delivery-info { background-color: #f8f9fa; border-radius: 5px; padding: 15px; }
+    .progress-container { margin-top: 20px; }
+    .eta-display { font-size: 1.2rem; font-weight: bold; margin-top: 10px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Track Order #{{ order.id }}</h1>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="delivery-info">
+                <h5>Delivery Status</h5>
+                <p class="fs-4">
+                    <span class="badge bg-{{ 'warning' if order.status == 'Pending' else 'primary' if order.status == 'Assigned' else 'info' if order.status == 'Out for Delivery' else 'success' if order.status == 'Delivered' else 'danger' }}">
+                        {{ order.status }}
+                    </span>
+                </p>
+                
+                {% if order.delivery_boy %}
+                    <h5>Delivery Boy</h5>
+                    <p>{{ order.delivery_boy.name }}</p>
+                    <p>{{ order.delivery_boy.phone }}</p>
+                    <p>Vehicle: {{ order.delivery_boy.vehicle_number }}</p>
+                {% endif %}
+
+                <div class="progress-container">
+                    <h5>Delivery Progress</h5>
+                    <div class="progress">
+                        <div id="delivery-progress" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div id="eta-display" class="eta-display"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header d-flex justify-content-between">
+                    <h5 class="mb-0">Live Tracking</h5>
+                    <span id="distance-display" class="badge bg-primary"></span>
+                </div>
+                <div class="card-body">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.locatecontrol@0.76.1/dist/L.Control.Locate.min.js"></script>
+<script>
+    // Initialize map
+    const map = L.map('map').setView([{{ map_data.delivery_lat }}, {{ map_data.delivery_lng }}], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    // Add locate control
+    L.control.locate().addTo(map);
+
+    // Delivery destination marker
+    const destinationMarker = L.marker([{{ map_data.delivery_lat }}, {{ map_data.delivery_lng }}], {
+        icon: L.divIcon({
+            className: 'destination-marker',
+            html: '<i class="fas fa-map-marker-alt" style="color: #dc3545; font-size: 24px;"></i>',
+            iconSize: [24, 24]
+        })
+    }).addTo(map).bindPopup("Delivery Location");
+
+    // Initialize routing control
+    const routingControl = L.Routing.control({
+        waypoints: [],
+        routeWhileDragging: true,
+        showAlternatives: false,
+        addWaypoints: false,
+        draggableWaypoints: false,
+        fitSelectedRoutes: true,
+        lineOptions: {
+            styles: [{color: '#4285F4', opacity: 0.8, weight: 5}]
+        }
+    }).addTo(map);
+
+    // Delivery boy marker and tracking
+    {% if map_data.current_lat and map_data.current_lng %}
+    let deliveryMarker = L.marker([{{ map_data.current_lat }}, {{ map_data.current_lng }}], {
+        icon: L.divIcon({
+            className: 'delivery-marker',
+            html: '<i class="fas fa-truck" style="color: #0d6efd; font-size: 24px;"></i>',
+            iconSize: [24, 24]
+        }),
+        zIndexOffset: 1000
+    }).addTo(map).bindPopup("Delivery Vehicle");
+
+    // Initial route calculation
+    updateRoute([{{ map_data.current_lat }}, {{ map_data.current_lng }}]);
+
+    // Auto-update location and route
+    {% if order.status in ['Assigned', 'Out for Delivery'] %}
+    const updateInterval = setInterval(updateDeliveryLocation, 10000);
+    
+    function updateDeliveryLocation() {
+        fetch("{{ url_for('customer.order_details', order_id=order.id) }}")
+            .then(response => response.json())
+            .then(data => {
+                if (data.current_location) {
+                    const newPos = [data.current_location.lat, data.current_location.lng];
+                    deliveryMarker.setLatLng(newPos);
+                    updateRoute(newPos);
+                    updateProgress(newPos);
+                }
+                
+                if (data.status === 'Delivered') {
+                    clearInterval(updateInterval);
+                    document.getElementById('delivery-progress').style.width = '100%';
+                    document.getElementById('eta-display').textContent = 'Delivery completed!';
+                }
+            });
+    }
+    {% endif %}
+    {% endif %}
+
+    function updateRoute(currentPos) {
+        routingControl.setWaypoints([
+            L.latLng(currentPos[0], currentPos[1]),
+            L.latLng({{ map_data.delivery_lat }}, {{ map_data.delivery_lng }})
+        ]);
+        
+        routingControl.on('routesfound', function(e) {
+            const routes = e.routes;
+            const route = routes[0];
+            
+            // Update distance display
+            const distance = (route.summary.totalDistance / 1000).toFixed(1);
+            document.getElementById('distance-display').textContent = `${distance} km remaining`;
+            
+            // Calculate ETA (assuming average speed of 30 km/h)
+            const etaMinutes = Math.round((route.summary.totalDistance / 1000) / 30 * 60);
+            document.getElementById('eta-display').textContent = `ETA: ~${etaMinutes} minutes`;
+        });
+    }
+
+    function updateProgress(currentPos) {
+        // Simple progress calculation based on straight-line distance
+        const destLat = {{ map_data.delivery_lat }};
+        const destLng = {{ map_data.delivery_lng }};
+        
+        const totalDist = Math.sqrt(
+            Math.pow(destLat - {{ map_data.current_lat }}, 2) + 
+            Math.pow(destLng - {{ map_data.current_lng }}, 2)
+        );
+        
+        const currentDist = Math.sqrt(
+            Math.pow(destLat - currentPos[0], 2) + 
+            Math.pow(destLng - currentPos[1], 2)
+        );
+        
+        const progress = Math.min(100, Math.max(0, 
+            Math.round(100 - (currentDist / totalDist * 100))
+        );
+        
+        document.getElementById('delivery-progress').style.width = `${progress}%`;
+    }
+</script>
+{% endblock %}

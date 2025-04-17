@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Diesel Delivery Service{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="hero-section py-5 text-center">
+        <h1 class="display-4 fw-bold">Diesel Delivery Service</h1>
+        <p class="lead">Get diesel delivered to your location with just a few clicks</p>
+        
+        <div class="mt-4">
+            {% if current_user.is_authenticated %}
+                {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary btn-lg px-4 me-2">Admin Dashboard</a>
+                {% else %}
+                    <a href="{{ url_for('customer.dashboard') }}" class="btn btn-primary btn-lg px-4 me-2">Customer Dashboard</a>
+                {% endif %}
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4 me-2">Login</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-secondary btn-lg px-4">Register</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Fast Delivery</h5>
+                    <p class="card-text">Get your diesel delivered within hours of placing your order.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Competitive Pricing</h5>
+                    <p class="card-text">We offer the best prices in the market with no hidden charges.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">24/7 Support</h5>
+                    <p class="card-text">Our customer support team is available round the clock.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4 mb-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4 class="card-title">How It Works</h4>
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="step-number">1</div>
+                            <h5>Place Order</h5>
+                            <p>Enter your delivery details and quantity</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="step-number">2</div>
+                            <h5>Confirmation</h5>
+                            <p>Receive order confirmation</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="step-number">3</div>
+                            <h5>Dispatch</h5>
+                            <p>We prepare and dispatch your order</p>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="step-number">4</div>
+                            <h5>Delivery</h5>
+                            <p>Get your diesel delivered</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
