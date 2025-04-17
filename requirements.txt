@@ -9,3 +9,4 @@ gunicorn
 werkzeug==2.0.3
 sqlalchemy==1.4.48
 pymysql
+email_validator
