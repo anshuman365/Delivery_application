@@ -8,3 +8,4 @@ Flask-WTF==0.15.1
 gunicorn
 werkzeug==2.0.3
 sqlalchemy==1.4.48
+pymysql
