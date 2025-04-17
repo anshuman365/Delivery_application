@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: Nexora_Fuel_Delivery_Service
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    buildpacks:
+      - https://github.com/render-examples/python-3.9
+      - https://github.com/render-examples/render-buildpack-apt
+    aptPackages:
+      - libz-dev
+      - libpng-dev
+      # Add other suspected dependencies here
