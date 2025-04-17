@@ -1,9 +1,9 @@
-Flask==2.0.1
-Flask-SQLAlchemy==2.5.1
-Flask-Migrate==3.1.0
-Flask-Login==0.5.0
+Flask==3.1.0
+Flask-SQLAlchemy==2.0.37
+Flask-Migrate==4.1.0
+Flask-Login==0.6.3
 python-dotenv==0.19.0
 reportlab
-Flask-WTF==0.15.1
+Flask-WTF==1.2.2
 gunicorn
 werkzeug==2.0.3
